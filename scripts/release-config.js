@@ -24,9 +24,9 @@ if (!g.includes('medinaRelease')) {
 android {
     signingConfigs {
         release {
-            storeFile file(System.getenv("KS_FILE") ?: "../../keystore/medinarun-upload.jks")
+            storeFile file(System.getenv("KS_FILE") ?: "../../keystore/alaabalhay-upload.jks")
             storePassword System.getenv("KS_PASS")
-            keyAlias "medinarun"
+            keyAlias "alaabalhay"
             keyPassword System.getenv("KS_PASS")
         }
     }

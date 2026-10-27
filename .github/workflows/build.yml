@@ -59,7 +59,7 @@ jobs:
         working-directory: android
         env:
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          KS_FILE: ${{ github.workspace }}/keystore/medinarun-upload.jks
+          KS_FILE: ${{ github.workspace }}/keystore/alaabalhay-upload.jks
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon bundleRelease assembleRelease
