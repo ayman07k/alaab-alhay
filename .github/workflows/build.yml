@@ -1,0 +1,91 @@
+name: Build ألعاب الحي (Google Play)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK 36
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKM=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+          yes | $SDKM --licenses > /dev/null || true
+          $SDKM "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+          ls $ANDROID_HOME/platforms
+
+      - name: Check signing secret
+        env:
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KS_PASS" ]; then echo "::error::Add the KEYSTORE_PASSWORD secret (Settings > Secrets and variables > Actions)"; exit 1; fi
+
+      - name: Install
+        run: npm install
+
+      - name: Web libraries
+        run: npm run libs
+
+      - name: Create Android project
+        run: |
+          npx cap add android
+          node scripts/patch-android.js
+          npx @capacitor/assets generate --android
+          npx cap sync android
+
+      - name: Release settings (version, target SDK 36, signing)
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: node scripts/release-config.js
+
+      - name: Build signed AAB and APK
+        working-directory: android
+        env:
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KS_FILE: ${{ github.workspace }}/keystore/medinarun-upload.jks
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon bundleRelease assembleRelease
+
+      - name: Verify
+        run: |
+          AAPT2=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)aapt2
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          $AAPT2 dump badging "$APK" | grep -E "package:|sdkVersion|targetSdkVersion|application-label|uses-permission"
+          ls -la android/app/build/outputs/bundle/release/
+          mkdir -p out
+          cp android/app/build/outputs/bundle/release/*.aab out/alaab-alhay-v${{ github.run_number }}.aab
+          cp "$APK" out/alaab-alhay-v${{ github.run_number }}.apk
+          $AAPT2 dump badging "$APK" > out/badging-v${{ github.run_number }}.txt
+
+      - name: Save build to the "builds" branch
+        run: |
+          cd out
+          git init -q -b builds
+          git config user.name "build bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Build v${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" builds
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alaab-alhay-v${{ github.run_number }}
+          path: out/

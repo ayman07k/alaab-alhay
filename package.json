@@ -1,0 +1,24 @@
+{
+  "name": "alaab-alhay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ألعاب الحي - Neighborhood Games: Moroccan childhood games",
+  "scripts": {
+    "libs": "node scripts/copy-libs.js",
+    "android:add": "npx cap add android && node scripts/patch-android.js",
+    "icons": "npx @capacitor/assets generate --android",
+    "sync": "npm run libs && npx cap sync android",
+    "open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0"
+  }
+}
