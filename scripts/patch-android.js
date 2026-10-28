@@ -25,3 +25,18 @@ if (!m.includes('android:screenOrientation')) {
 }
 fs.writeFileSync(manifestPath, m);
 console.log('AndroidManifest.xml and strings.xml updated with App ID ' + cfg.androidAppId);
+
+// Launcher name in the phone's language (default English; Arabic, French, Spanish phones get their own)
+const NAMES = { '': 'Neighborhood Games', ar: 'ألعاب الحي', fr: 'Jeux du quartier', es: 'Juegos del barrio' };
+for (const [q, n] of Object.entries(NAMES)) {
+  const dir = path.join(res, 'res', q ? 'values-' + q : 'values');
+  if (!q) {
+    let s = fs.readFileSync(stringsPath, 'utf8');
+    s = s.replace(/<string name="app_name">[^<]*<\/string>/, `<string name="app_name">${n}</string>`).replace(/<string name="title_activity_main">[^<]*<\/string>/, `<string name="title_activity_main">${n}</string>`);
+    fs.writeFileSync(stringsPath, s);
+  } else {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'strings.xml'), `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${n}</string>\n    <string name="title_activity_main">${n}</string>\n</resources>\n`);
+  }
+}
+console.log('Localized launcher names written');
